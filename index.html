@@ -568,7 +568,7 @@
         let letterPositions = [];
 
         function splitIntoSentences(text) {
-            const regex = /[.!?]+\s+/;
+            const regex = /[.,:!?]+\s*/;
             return text
                 .split(regex)
                 .map(s => s.trim())
