@@ -135,6 +135,15 @@
             transition: all var(--transition);
         }
 
+        .btn-row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-row .btn {
+            transition: all var(--transition);
+        }
+
         .btn-primary {
             background: var(--primary);
             color: #000;
@@ -372,6 +381,26 @@
             color: var(--primary);
         }
 
+        .btn-reset {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            background: var(--surface-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+
+        .btn-reset:hover {
+            background: #27272a;
+            color: var(--error);
+            border-color: var(--error);
+        }
+
         .hint {
             text-align: center;
             font-size: 0.75rem;
@@ -480,12 +509,15 @@
                         <textarea id="sourceText" placeholder="Paste your English text here...&#10;&#10;Example: The quick brown fox jumps over the lazy dog. Hello, world! Practice makes perfect."></textarea>
                     </div>
                     <div class="error" id="errorMessage"></div>
-                    <button class="btn btn-primary" id="startBtn">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                        </svg>
-                        Start Practice
-                    </button>
+                    <div class="btn-row">
+                        <button class="btn btn-primary" id="startBtn">
+                            <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                            </svg>
+                            <span class="btn-text">Start Practice</span>
+                        </button>
+                        <button class="btn btn-secondary" id="resetBtn">Reset</button>
+                    </div>
                 </div>
 
                 <div class="practice-section" id="practiceSection">
@@ -527,6 +559,12 @@
                             </svg>
                             Replay
                         </button>
+                        <button class="btn-reset" id="resetPracticeBtn" title="Reset all progress">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                                <path d="M3 3v5h5"></path>
+                            </svg>
+                        </button>
                         <div class="stats">
                             Accuracy: <span class="stats-value" id="accuracy">--</span>
                         </div>
@@ -561,6 +599,7 @@
         const accuracyDisplay = document.getElementById('accuracy');
         const completionMessage = document.getElementById('completionMessage');
         const restartBtn = document.getElementById('restartBtn');
+        const resetBtn = document.getElementById('resetBtn');
         const errorMessage = document.getElementById('errorMessage');
 
         let sentences = [];
@@ -748,22 +787,52 @@
                 return;
             }
 
-            sentences = splitIntoSentences(text);
+            const initialSentences = splitIntoSentences(text);
 
-            if (sentences.length === 0) {
+            if (initialSentences.length === 0) {
                 errorMessage.textContent = 'No valid sentences found. Make sure your text ends with punctuation (. ! ?)';
                 errorMessage.classList.add('active');
                 return;
             }
 
-            errorMessage.classList.remove('active');
-            setupSection.classList.add('hidden');
-            practiceSection.classList.add('active');
-            completionMessage.classList.remove('active');
+            startBtn.disabled = true;
+            startBtn.querySelector('.btn-text').textContent = 'Processing...';
 
-            currentIndex = 0;
-            showSentence(0);
-            saveState();
+            fetch('/api/split-sentences', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sentences: initialSentences })
+            })
+            .then(res => res.json())
+            .then(data => {
+                sentences = data.sentences || initialSentences;
+                
+                errorMessage.classList.remove('active');
+                setupSection.classList.add('hidden');
+                practiceSection.classList.add('active');
+                completionMessage.classList.remove('active');
+
+                currentIndex = 0;
+                showSentence(0);
+                saveState();
+            })
+            .catch(err => {
+                console.error('Error calling API:', err);
+                sentences = initialSentences;
+                
+                errorMessage.classList.remove('active');
+                setupSection.classList.add('hidden');
+                practiceSection.classList.add('active');
+                completionMessage.classList.remove('active');
+
+                currentIndex = 0;
+                showSentence(0);
+                saveState();
+            })
+            .finally(() => {
+                startBtn.disabled = false;
+                startBtn.querySelector('.btn-text').textContent = 'Start Practice';
+            });
         }
 
         function restart() {
@@ -820,6 +889,24 @@
         });
 
         restartBtn.addEventListener('click', restart);
+
+        resetBtn.addEventListener('click', () => {
+            localStorage.removeItem(STORAGE_KEY);
+            sourceText.value = '';
+            sentences = [];
+            currentIndex = 0;
+        });
+
+        const resetPracticeBtn = document.getElementById('resetPracticeBtn');
+        resetPracticeBtn.addEventListener('click', () => {
+            localStorage.removeItem(STORAGE_KEY);
+            sourceText.value = '';
+            sentences = [];
+            currentIndex = 0;
+            practiceSection.classList.remove('active');
+            completionMessage.classList.remove('active');
+            setupSection.classList.remove('hidden');
+        });
 
         document.addEventListener('keydown', (e) => {
             if (!practiceSection.classList.contains('active')) return;
