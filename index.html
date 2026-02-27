@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English Dictation Practice</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #0a0a0b;
+            --surface: #141416;
+            --surface-elevated: #1c1c1f;
+            --primary: #22c55e;
+            --primary-dim: rgba(34, 197, 94, 0.15);
+            --error: #ef4444;
+            --error-dim: rgba(239, 68, 68, 0.15);
+            --text-primary: #fafafa;
+            --text-secondary: #a1a1aa;
+            --text-muted: #52525b;
+            --border: #27272a;
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            --transition: 150ms ease;
+        }
+
+        body {
+            font-family: 'DM Sans', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.5;
+            background-image: 
+                radial-gradient(ellipse at 20% 0%, rgba(34, 197, 94, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 100%, rgba(34, 197, 94, 0.05) 0%, transparent 50%);
+        }
+
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 48px 24px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 2.25rem;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            margin-bottom: 8px;
+        }
+
+        h1 span {
+            color: var(--primary);
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            box-shadow: var(--shadow);
+        }
+
+        .setup-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .setup-section.hidden {
+            display: none;
+        }
+
+        label {
+            font-weight: 500;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 180px;
+            padding: 16px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9375rem;
+            line-height: 1.7;
+            resize: vertical;
+            transition: border-color var(--transition), box-shadow var(--transition);
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-dim);
+        }
+
+        textarea::placeholder {
+            color: var(--text-muted);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 28px;
+            font-family: inherit;
+            font-size: 0.9375rem;
+            font-weight: 600;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #000;
+        }
+
+        .btn-primary:hover {
+            background: #16a34a;
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: var(--surface-elevated);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: #27272a;
+        }
+
+        .btn-secondary:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .practice-section {
+            display: none;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .practice-section.active {
+            display: flex;
+        }
+
+        .progress {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .progress-track {
+            flex: 1;
+            height: 3px;
+            background: var(--border);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            transition: width 300ms ease;
+        }
+
+        .progress-text {
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .sentence-box {
+            background: var(--bg);
+            border-radius: var(--radius-md);
+            padding: 32px 24px;
+            text-align: center;
+        }
+
+        .target-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.625rem;
+            font-weight: 500;
+            letter-spacing: 0.02em;
+            line-height: 2.2;
+            word-break: break-word;
+            min-height: 80px;
+        }
+
+        .char {
+            display: inline;
+            transition: color var(--transition);
+        }
+
+        .char.letter {
+            color: var(--text-muted);
+        }
+
+        .char.letter.filled {
+            color: var(--text-primary);
+        }
+
+        .char.letter.correct {
+            color: var(--primary);
+        }
+
+        .char.letter.incorrect {
+            color: var(--error);
+        }
+
+        .char.punctuation {
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .char.space {
+            display: inline-block;
+            width: 0.5em;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 18px 20px;
+            background: var(--bg);
+            border: 2px solid var(--border);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.125rem;
+            letter-spacing: 0.05em;
+            text-transform: lowercase;
+            transition: border-color var(--transition), box-shadow var(--transition);
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-dim);
+        }
+
+        .input-field::placeholder {
+            color: var(--text-muted);
+            text-transform: none;
+            letter-spacing: normal;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .nav-btns {
+            display: flex;
+            gap: 10px;
+        }
+
+        .nav-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 18px;
+            background: var(--surface-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            background: #27272a;
+            border-color: var(--text-muted);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .nav-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .audio-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            background: var(--surface-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            color: var(--text-secondary);
+            font-family: inherit;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+
+        .audio-btn:hover {
+            background: #27272a;
+            color: var(--text-primary);
+        }
+
+        .audio-btn.playing {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .audio-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .stats {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .stats-value {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .hint {
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .hint kbd {
+            display: inline-block;
+            padding: 2px 6px;
+            background: var(--surface-elevated);
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            font-size: 0.6875rem;
+            margin: 0 2px;
+        }
+
+        .completion {
+            text-align: center;
+            padding: 48px 24px;
+            display: none;
+        }
+
+        .completion.active {
+            display: block;
+        }
+
+        .completion h2 {
+            font-size: 1.75rem;
+            margin-bottom: 12px;
+            color: var(--primary);
+        }
+
+        .completion p {
+            color: var(--text-secondary);
+            margin-bottom: 28px;
+        }
+
+        .error {
+            background: var(--error-dim);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: var(--radius-md);
+            padding: 14px 18px;
+            color: #fca5a5;
+            font-size: 0.875rem;
+            display: none;
+        }
+
+        .error.active {
+            display: block;
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 32px 16px;
+            }
+
+            h1 {
+                font-size: 1.75rem;
+            }
+
+            .card {
+                padding: 20px;
+            }
+
+            .target-text {
+                font-size: 1.25rem;
+            }
+
+            .controls {
+                flex-wrap: wrap;
+            }
+
+            .nav-btns {
+                order: 2;
+                flex: 1;
+                justify-content: center;
+            }
+
+            .audio-btn {
+                order: 1;
+                flex: 1;
+                justify-content: center;
+            }
+
+            .stats {
+                order: 3;
+                width: 100%;
+                justify-content: center;
+                padding-top: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>English <span>Dictation</span></h1>
+            <p class="subtitle">Listen, type, and master English spelling</p>
+        </header>
+
+        <main>
+            <div class="card">
+                <div class="setup-section" id="setupSection">
+                    <div>
+                        <label for="sourceText">Enter or paste your English passage</label>
+                        <textarea id="sourceText" placeholder="Paste your English text here...&#10;&#10;Example: The quick brown fox jumps over the lazy dog. Hello, world! Practice makes perfect."></textarea>
+                    </div>
+                    <div class="error" id="errorMessage"></div>
+                    <button class="btn btn-primary" id="startBtn">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                        Start Practice
+                    </button>
+                </div>
+
+                <div class="practice-section" id="practiceSection">
+                    <div class="progress">
+                        <div class="progress-track">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                        <span class="progress-text" id="progressText">1 / 1</span>
+                    </div>
+
+                    <div class="sentence-box">
+                        <div class="target-text" id="targetText"></div>
+                    </div>
+
+                    <div class="input-wrapper">
+                        <input type="text" class="input-field" id="userInput" placeholder="type the letters you hear..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                    </div>
+
+                    <div class="controls">
+                        <div class="nav-btns">
+                            <button class="nav-btn" id="prevBtn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="15 18 9 12 15 6"></polyline>
+                                </svg>
+                                Prev
+                            </button>
+                            <button class="nav-btn" id="nextBtn">
+                                Next
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="9 18 15 12 9 6"></polyline>
+                                </svg>
+                            </button>
+                        </div>
+                        <button class="audio-btn" id="audioBtn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                                <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                                <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+                            </svg>
+                            Replay
+                        </button>
+                        <div class="stats">
+                            Accuracy: <span class="stats-value" id="accuracy">--</span>
+                        </div>
+                    </div>
+
+                    <div class="hint">
+                        <kbd>←</kbd> <kbd>→</kbd> navigate &nbsp;·&nbsp; <kbd>Space</kbd> replay audio &nbsp;·&nbsp; <kbd>Enter</kbd> next sentence
+                    </div>
+
+                    <div class="completion" id="completionMessage">
+                        <h2>🎉 Well Done!</h2>
+                        <p>You've completed all sentences in this passage.</p>
+                        <button class="btn btn-primary" id="restartBtn">Practice Again</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const sourceText = document.getElementById('sourceText');
+        const startBtn = document.getElementById('startBtn');
+        const setupSection = document.getElementById('setupSection');
+        const practiceSection = document.getElementById('practiceSection');
+        const targetText = document.getElementById('targetText');
+        const userInput = document.getElementById('userInput');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const audioBtn = document.getElementById('audioBtn');
+        const accuracyDisplay = document.getElementById('accuracy');
+        const completionMessage = document.getElementById('completionMessage');
+        const restartBtn = document.getElementById('restartBtn');
+        const errorMessage = document.getElementById('errorMessage');
+
+        let sentences = [];
+        let currentIndex = 0;
+        let letterPositions = [];
+
+        function splitIntoSentences(text) {
+            const regex = /[.!?]+\s+/;
+            return text
+                .split(regex)
+                .map(s => s.trim())
+                .filter(s => s.length > 0);
+        }
+
+        function isLetter(char) {
+            return /[a-zA-Z]/.test(char);
+        }
+
+        function isPunctuation(char) {
+            return /[.,!?;:'"()\[\]\-]/.test(char);
+        }
+
+        function getLetterPositions(sentence) {
+            const positions = [];
+            for (let i = 0; i < sentence.length; i++) {
+                if (isLetter(sentence[i])) {
+                    positions.push(i);
+                }
+            }
+            return positions;
+        }
+
+        function renderTargetText(sentence, input) {
+            letterPositions = getLetterPositions(sentence);
+            const inputLetters = input.toLowerCase().split('');
+            let inputIndex = 0;
+            let html = '';
+
+            for (let i = 0; i < sentence.length; i++) {
+                const char = sentence[i];
+
+                if (isPunctuation(char)) {
+                    html += `<span class="char punctuation">${char}</span>`;
+                } else if (char === ' ') {
+                    html += `<span class="char space"> </span>`;
+                } else if (isLetter(char)) {
+                    if (inputIndex < inputLetters.length) {
+                        const userChar = inputLetters[inputIndex];
+                        const targetChar = sentence[i].toLowerCase();
+                        const isCorrect = userChar === targetChar;
+                        html += `<span class="char letter ${isCorrect ? 'correct' : 'incorrect'}">${char}</span>`;
+                    } else {
+                        html += `<span class="char letter">-</span>`;
+                    }
+                    inputIndex++;
+                } else {
+                    html += `<span class="char">${char}</span>`;
+                }
+            }
+
+            targetText.innerHTML = html;
+        }
+
+        function updateProgress() {
+            const total = sentences.length;
+            const current = currentIndex + 1;
+            progressText.textContent = `${current} / ${total}`;
+            progressFill.style.width = `${(current / total) * 100}%`;
+        }
+
+        function calculateAccuracy() {
+            const input = userInput.value.toLowerCase();
+            const sentence = sentences[currentIndex];
+            const letters = letterPositions;
+            
+            if (letters.length === 0) return '--';
+
+            let correct = 0;
+            for (let i = 0; i < Math.min(input.length, letters.length); i++) {
+                if (input[i] === sentence[letters[i]].toLowerCase()) {
+                    correct++;
+                }
+            }
+
+            return Math.round((correct / letters.length) * 100) + '%';
+        }
+
+        function speak(text) {
+            if (!('speechSynthesis' in window)) {
+                return;
+            }
+
+            window.speechSynthesis.cancel();
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
+            utterance.rate = 0.85;
+            utterance.pitch = 1;
+            utterance.volume = 1;
+
+            audioBtn.classList.add('playing');
+
+            utterance.onend = () => {
+                audioBtn.classList.remove('playing');
+            };
+
+            utterance.onerror = () => {
+                audioBtn.classList.remove('playing');
+            };
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function showSentence(index) {
+            if (index < 0) index = sentences.length - 1;
+            if (index >= sentences.length) index = 0;
+
+            currentIndex = index;
+            userInput.value = '';
+            
+            renderTargetText(sentences[currentIndex], '');
+            updateProgress();
+            accuracyDisplay.textContent = '--';
+
+            prevBtn.disabled = sentences.length <= 1;
+            nextBtn.disabled = sentences.length <= 1;
+
+            userInput.focus();
+
+            setTimeout(() => {
+                speak(sentences[currentIndex]);
+            }, 400);
+        }
+
+        function startPractice() {
+            const text = sourceText.value.trim();
+
+            if (!text) {
+                errorMessage.textContent = 'Please enter some text to practice.';
+                errorMessage.classList.add('active');
+                return;
+            }
+
+            sentences = splitIntoSentences(text);
+
+            if (sentences.length === 0) {
+                errorMessage.textContent = 'No valid sentences found. Make sure your text ends with punctuation (. ! ?)';
+                errorMessage.classList.add('active');
+                return;
+            }
+
+            errorMessage.classList.remove('active');
+            setupSection.classList.add('hidden');
+            practiceSection.classList.add('active');
+            completionMessage.classList.remove('active');
+
+            currentIndex = 0;
+            showSentence(0);
+        }
+
+        function restart() {
+            practiceSection.classList.remove('active');
+            completionMessage.classList.remove('active');
+            setupSection.classList.remove('hidden');
+            sourceText.value = '';
+            sentences = [];
+            currentIndex = 0;
+        }
+
+        startBtn.addEventListener('click', startPractice);
+
+        userInput.addEventListener('input', () => {
+            const input = userInput.value;
+            renderTargetText(sentences[currentIndex], input);
+            
+            if (input.length > 0) {
+                accuracyDisplay.textContent = calculateAccuracy();
+            } else {
+                accuracyDisplay.textContent = '--';
+            }
+
+            if (input.length >= letterPositions.length) {
+                const inputLower = input.toLowerCase();
+                const sentence = sentences[currentIndex];
+                let allCorrect = true;
+                
+                for (let i = 0; i < letterPositions.length; i++) {
+                    if (inputLower[i] !== sentence[letterPositions[i]].toLowerCase()) {
+                        allCorrect = false;
+                        break;
+                    }
+                }
+
+                if (allCorrect) {
+                    setTimeout(() => {
+                        if (currentIndex < sentences.length - 1) {
+                            showSentence(currentIndex + 1);
+                        } else {
+                            completionMessage.classList.add('active');
+                        }
+                    }, 600);
+                }
+            }
+        });
+
+        prevBtn.addEventListener('click', () => showSentence(currentIndex - 1));
+        nextBtn.addEventListener('click', () => showSentence(currentIndex + 1));
+
+        audioBtn.addEventListener('click', () => {
+            speak(sentences[currentIndex]);
+        });
+
+        restartBtn.addEventListener('click', restart);
+
+        document.addEventListener('keydown', (e) => {
+            if (!practiceSection.classList.contains('active')) return;
+
+            if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                showSentence(currentIndex - 1);
+            } else if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                showSentence(currentIndex + 1);
+            } else if (e.key === ' ') {
+                if (document.activeElement !== userInput) {
+                    e.preventDefault();
+                    speak(sentences[currentIndex]);
+                }
+            }
+        });
+
+        userInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (currentIndex < sentences.length - 1) {
+                    showSentence(currentIndex + 1);
+                } else {
+                    completionMessage.classList.add('active');
+                }
+            }
+        });
+    </script>
+</body>
+</html>
