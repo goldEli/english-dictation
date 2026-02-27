@@ -567,6 +567,49 @@
         let currentIndex = 0;
         let letterPositions = [];
 
+        const STORAGE_KEY = 'dictation_state';
+
+        function saveState() {
+            const state = {
+                sentences,
+                currentIndex,
+                sourceText: sourceText.value
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        }
+
+        function loadState() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                try {
+                    const state = JSON.parse(saved);
+                    sentences = state.sentences || [];
+                    currentIndex = state.currentIndex || 0;
+                    sourceText.value = state.sourceText || '';
+                    return true;
+                } catch (e) {
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        function restorePractice() {
+            if (sentences.length > 0) {
+                setupSection.classList.add('hidden');
+                practiceSection.classList.add('active');
+                completionMessage.classList.remove('active');
+                showSentence(currentIndex);
+            }
+        }
+
+        (function init() {
+            loadState();
+            if (sentences.length > 0) {
+                restorePractice();
+            }
+        })();
+
         function splitIntoSentences(text) {
             const regex = /[.,:!?]+\s*/;
             return text
@@ -689,6 +732,7 @@
             nextBtn.disabled = sentences.length <= 1;
 
             userInput.focus();
+            saveState();
 
             setTimeout(() => {
                 speak(sentences[currentIndex]);
@@ -719,6 +763,7 @@
 
             currentIndex = 0;
             showSentence(0);
+            saveState();
         }
 
         function restart() {
@@ -728,6 +773,7 @@
             sourceText.value = '';
             sentences = [];
             currentIndex = 0;
+            localStorage.removeItem(STORAGE_KEY);
         }
 
         startBtn.addEventListener('click', startPractice);
