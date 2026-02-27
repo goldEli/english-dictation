@@ -6,8 +6,8 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-  baseURL: process.env.OPENAI_BASE_URL
+    apiKey: process.env.OPENAI_API_KEY,
+    baseURL: process.env.OPENAI_BASE_URL
 });
 
 app.use(express.json());
@@ -37,63 +37,76 @@ Input: "Hello world"
 Output: ["Hello world"]`;
 
 app.post('/api/split-sentences', async (req, res) => {
-  try {
-    const { sentences } = req.body;
+    try {
+        const { sentences } = req.body;
 
-    if (!sentences || !Array.isArray(sentences)) {
-      return res.status(400).json({ error: 'Invalid request: sentences array required' });
-    }
-
-    const allPracticeUnits = [];
-
-    for (const sentence of sentences) {
-      const wordCount = sentence.trim().split(/\s+/).length;
-
-      if (wordCount <= 5) {
-        allPracticeUnits.push(sentence);
-      } else {
-        console.log(`Splitting sentence: ${sentence}`);
-        const response = await openai.chat.completions.create({
-          model: process.env.MODEL_NAME || 'gpt-3.5-turbo',
-          messages: [
-            { role: 'system', content: SYSTEM_PROMPT },
-            { role: 'user', content: `Split this sentence for dictation practice:\n"${sentence}"` }
-          ],
-          temperature: 0.3,
-          max_tokens: 500
-        });
-
-        
-
-        const content = response.choices[0]?.message?.content;
-
-        console.log(`LLM Response: ${content}`);
-        
-        if (content) {
-          try {
-            const parts = JSON.parse(content);
-            if (Array.isArray(parts)) {
-              allPracticeUnits.push(...parts);
-            } else {
-              allPracticeUnits.push(sentence);
-            }
-          } catch (parseError) {
-            console.error('Failed to parse LLM response:', content);
-            allPracticeUnits.push(sentence);
-          }
-        } else {
-          allPracticeUnits.push(sentence);
+        if (!sentences || !Array.isArray(sentences)) {
+            return res.status(400).json({ error: 'Invalid request: sentences array required' });
         }
-      }
-    }
 
-    res.json({ sentences: allPracticeUnits });
-  } catch (error) {
-    console.error('Error splitting sentences:', error);
-    res.status(500).json({ error: 'Failed to process sentences' });
-  }
+        const allPracticeUnits = [];
+
+        for (const sentence of sentences) {
+            const wordCount = sentence.trim().split(/\s+/).length;
+
+            if (wordCount <= 5) {
+                allPracticeUnits.push(sentence);
+            } else {
+                console.log(`Splitting sentence: ${sentence}`);
+                const response = await openai.chat.completions.create({
+                    model: process.env.MODEL_NAME || 'gpt-3.5-turbo',
+                    messages: [
+                        { role: 'system', content: SYSTEM_PROMPT },
+                        { role: 'user', content: `Split this sentence for dictation practice:\n"${sentence}"` }
+                    ],
+                    temperature: 0.3,
+                    max_tokens: 500
+                });
+
+
+                function extractJSONArray(text) {
+                    const match = text.match(/\[[\s\S]*\]/)
+                    if (!match) return null
+                    return JSON.parse(match[0])
+                }
+
+                const ret = response.choices[0]?.message?.content;
+
+                console.log("=============")
+                console.log(`LLM Response: ${ret}`);
+
+                // remove content
+                // <think>*123132</think> [1,2,3] => [1,2,3]
+                const content = ret ? extractJSONArray(ret) : null;
+
+                console.log(`Cleaned Content: ${content}`);
+                console.log("=============")
+
+                if (content) {
+                    try {
+                        const parts = JSON.parse(content);
+                        if (Array.isArray(parts)) {
+                            allPracticeUnits.push(...parts);
+                        } else {
+                            allPracticeUnits.push(sentence);
+                        }
+                    } catch (parseError) {
+                        console.error('Failed to parse LLM response:', content);
+                        allPracticeUnits.push(sentence);
+                    }
+                } else {
+                    allPracticeUnits.push(sentence);
+                }
+            }
+        }
+
+        res.json({ sentences: allPracticeUnits });
+    } catch (error) {
+        console.error('Error splitting sentences:', error);
+        res.status(500).json({ error: 'Failed to process sentences' });
+    }
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+    console.log(`Server running at http://localhost:${PORT}`);
 });
