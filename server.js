@@ -92,7 +92,7 @@ app.post('/api/split-sentences', async (req, res) => {
                             allPracticeUnits.push(sentence);
                         }
                     } catch (parseError) {
-                        console.error('Failed to parse LLM response:', content);
+                        console.error('\x1b[31mFailed to parse LLM response:\x1b[0m', content);
                         allPracticeUnits.push(sentence);
                     }
                 } else {
@@ -103,7 +103,7 @@ app.post('/api/split-sentences', async (req, res) => {
 
         res.json({ sentences: allPracticeUnits });
     } catch (error) {
-        console.error('Error splitting sentences:', error);
+        console.error('\x1b[31mError splitting sentences:\x1b[0m', error);
         res.status(500).json({ error: 'Failed to process sentences' });
     }
 });
