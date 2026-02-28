@@ -65,29 +65,30 @@ app.post('/api/split-sentences', async (req, res) => {
 
 
                 function extractJSONArray(text) {
-                    const match = text.match(/\[[\s\S]*\]/)
-                    if (!match) return null
+                    console.log('Looking for JSON array in text...');
+                    const match = text.match(/\[[\s\S]*\]/);
+                    if (!match) {
+                        console.log('No JSON array found in response');
+                        console.log('Response length:', text.length);
+                        console.log('First 500 chars:', text.substring(0, 500));
+                        return null;
+                    }
+                    console.log('Found match:', match[0]);
                     return JSON.parse(match[0])
                 }
 
-                const ret = response.choices[0]?.message?.content;
+                const content = response.choices[0]?.message?.content;
 
-                console.log("=============")
-                console.log(`LLM Response: ${ret}`);
-
-                // remove content
-                // <think>*123132</think> [1,2,3] => [1,2,3]
-                const content = ret ? extractJSONArray(ret) : null;
-
-                console.log(`Cleaned Content: ${content}`);
-                console.log("=============")
 
                 if (content) {
+                    console.log('Raw LLM response:', content.substring(0, 300));
                     try {
-                        const parts = JSON.parse(content);
-                        if (Array.isArray(parts)) {
+                        const parts = extractJSONArray(content);
+                        console.log('Extracted parts:', parts);
+                        if (parts && Array.isArray(parts)) {
                             allPracticeUnits.push(...parts);
                         } else {
+                            console.log('Parts not valid array, using original');
                             allPracticeUnits.push(sentence);
                         }
                     } catch (parseError) {
