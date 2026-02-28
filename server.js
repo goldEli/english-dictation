@@ -52,7 +52,7 @@ app.post('/api/split-sentences', async (req, res) => {
             if (wordCount <= 5) {
                 allPracticeUnits.push(sentence);
             } else {
-                console.log(`Splitting sentence: ${sentence}`);
+                // console.log(`Splitting sentence: ${sentence}`);
                 const response = await openai.chat.completions.create({
                     model: process.env.MODEL_NAME || 'gpt-3.5-turbo',
                     messages: [
@@ -65,7 +65,7 @@ app.post('/api/split-sentences', async (req, res) => {
 
 
                 function extractJSONArray(text) {
-                    console.log('Looking for JSON array in text...');
+                    // console.log('Looking for JSON array in text...');
                     const match = text.match(/\[[\s\S]*\]/);
                     if (!match) {
                         console.log('No JSON array found in response');
@@ -73,7 +73,7 @@ app.post('/api/split-sentences', async (req, res) => {
                         console.log('First 500 chars:', text.substring(0, 500));
                         return null;
                     }
-                    console.log('Found match:', match[0]);
+                    // console.log('Found match:', match[0]);
                     return JSON.parse(match[0])
                 }
 
@@ -81,14 +81,14 @@ app.post('/api/split-sentences', async (req, res) => {
 
 
                 if (content) {
-                    console.log('Raw LLM response:', content.substring(0, 300));
+                    // console.log('Raw LLM response:', content.substring(0, 300));
                     try {
                         const parts = extractJSONArray(content);
-                        console.log('Extracted parts:', parts);
+                        // console.log('Extracted parts:', parts);
                         if (parts && Array.isArray(parts)) {
                             allPracticeUnits.push(...parts);
                         } else {
-                            console.log('Parts not valid array, using original');
+                            // console.log('Parts not valid array, using original');
                             allPracticeUnits.push(sentence);
                         }
                     } catch (parseError) {
