@@ -16,10 +16,10 @@ app.use(express.static(__dirname));
 const SYSTEM_PROMPT = `You are a sentence splitting tool for English dictation practice.
 
 For each input sentence:
-1. If the sentence has 5 or fewer words, return it as-is in the array.
-2. If the sentence has more than 5 words, split it into smaller clauses or phrases that are:
+1. If the sentence has 10 or fewer words, return it as-is in the array.
+2. If the sentence has more than 10 words, split it into smaller clauses or phrases that are:
    - Grammatically complete
-   - Easy to practice (2-5 words each)
+   - Easy to practice (2-10 words each)
    - Return ALL parts as an array of strings
 
 Rules:
@@ -49,7 +49,7 @@ app.post('/api/split-sentences', async (req, res) => {
         for (const sentence of sentences) {
             const wordCount = sentence.trim().split(/\s+/).length;
 
-            if (wordCount <= 5) {
+            if (wordCount <= 10) {
                 allPracticeUnits.push(sentence);
             } else {
                 // console.log(`Splitting sentence: ${sentence}`);
@@ -60,7 +60,6 @@ app.post('/api/split-sentences', async (req, res) => {
                         { role: 'user', content: `Split this sentence for dictation practice:\n"${sentence}"` }
                     ],
                     temperature: 0.3,
-                    max_tokens: 500
                 });
 
 
@@ -68,9 +67,9 @@ app.post('/api/split-sentences', async (req, res) => {
                     // console.log('Looking for JSON array in text...');
                     const match = text.match(/\[[\s\S]*\]/);
                     if (!match) {
-                        console.log('No JSON array found in response');
-                        console.log('Response length:', text.length);
-                        console.log('First 500 chars:', text.substring(0, 500));
+                        console.error('No JSON array found in response:', text);
+                        // console.log('Response length:', text.length);
+                        // console.log('First 500 chars:', text.substring(0, 500));
                         return null;
                     }
                     // console.log('Found match:', match[0]);
